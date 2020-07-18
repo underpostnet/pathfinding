@@ -1,0 +1,853 @@
+<h1>CYBERIA</h1>
+
+<style>
+
+  s1 {
+
+    width: 100%;
+    height: 10%;
+    top: 0%;
+    left: 0%;
+    background: none;
+
+  }
+
+  s2 {
+
+    width: 100%;
+    height: 70%;
+    top: 10%;
+    left: 0%;
+    background: none;
+
+  }
+
+  s3 {
+
+    width: 100%;
+    height: 20%;
+    top: 80%;
+    left: 0%;
+    background: none;
+
+  }
+
+  topBar, botBar {
+
+    margin: auto;
+    height: 100%;
+    overflow: auto;
+
+  }
+
+  touch {
+
+    z-index: 800;
+    cursor: pointer;
+
+  }
+
+  touch:hover {
+
+    opacity: 0.8;
+
+  }
+
+  .button {
+
+    padding: 5px;
+    font-size: 10px;
+    cursor: pointer;
+    border: 2px solid white;
+
+  }
+
+  .git {
+
+    width: 100px;
+    filter: invert(100%);
+    opacity: 0.8;
+
+  }
+
+  .git:hover {
+
+    opacity: 1;
+
+  }
+
+  cover {
+
+    z-index: 999;
+    background: black;
+    width: 100%;
+    height: 100%;
+
+  }
+
+</style>
+
+<cover class='abs'><div class='abs center' style='top: 40%;'>L O A D I N G</div></cover>
+
+<s1 class='abs'>
+
+  <topBar style='background: #5c5c5c;' class='in'>
+
+    <div class='abs center credit'>
+
+      PathFinding Engine |
+
+      <a href='https://underpost.net/'> Powered By <strong>UNDER</strong>post.net</a>
+
+      <br>
+
+      <a target='_blank' href='https://github.com/underpostnet/pathfinding'><img class='git' src='https://underpost.net/pathfinding/assets/git.png'></a>
+
+    </div>
+
+  </topBar>
+
+</s1>
+
+<s2 class='abs'>
+
+  <map style='background: #2a2a2a;' class='abs center'>
+
+
+  </map>
+
+</s2>
+
+<s3 class='abs'>
+
+  <botBar style='background: #5c5c5c;' class='in'>
+    <div class='button b1'>key 1: clear</div>
+
+    <div class='in button b2' style='background: #202020;'>key 2: init_user_position</div>
+
+    <div class='in button b3'>key 3: set_obstacle_position</div>
+
+    <div class='in button b4'>key 4: path_generate</div>
+
+    <div class='in button b5'>key 5: clear_map</div>
+  </botBar>
+
+</s3>
+
+
+<script type='text/javascript'>
+
+  var aux = null;
+  var log = true;
+
+  (function(){
+
+    setTimeout(function(e){
+
+      fadeOut(s('cover'));
+
+    }, 600);
+
+    // responsive-map
+
+    function map(){
+
+      setInterval(function(e){
+
+        if(s('s2').clientWidth>s('s2').clientHeight){
+
+          s('map').style.width = s('s2').clientHeight+'px';
+          s('map').style.height = s('s2').clientHeight+'px';
+
+          s('topBar').style.width = s('s2').clientHeight+'px';
+          s('botBar').style.width = s('s2').clientHeight+'px';
+
+        }else{
+
+          s('map').style.width = s('s2').clientWidth+'px';
+          s('map').style.height = s('s2').clientWidth+'px';
+
+          s('topBar').style.width = s('s2').clientWidth+'px';
+          s('botBar').style.width = s('s2').clientWidth+'px';
+
+        }
+
+      }, 100);
+
+    }
+
+    map();
+
+
+    var dim = 14;
+    var long = (100/dim);
+
+    // node-map-data
+
+    var matrix = new Array(dim);
+
+    for(var y=0;y<dim;y++){
+
+      matrix[y] = new Array(dim);
+
+      for(var x=0;x<dim;x++){
+
+        matrix[y][x]={
+
+          class: ('.touch-'+x+'-'+y),
+          x: function() { return parseInt(this.class.split('-')[1])},
+          y: function() { return parseInt(this.class.split('-')[2])},
+          obj: null,
+          block: false,
+          cost: -1,
+          add_obj: function(name){
+
+            if(name=='clear'){
+
+              if(!(this.x()==user.x && this.y()==user.y && last_key==49)){
+
+                this.obj = null;
+                this.block = false;
+                this.cost = -1;
+
+                s(this.class).style.background = 'white';
+                htmls(this.class, '');
+
+              }
+
+            }
+
+            //init engine
+
+            if(name=='obstaculo'){
+
+              if(!(this.x()==user.x && this.y()==user.y)){
+
+                clearMap();
+
+                this.obj = name;
+                this.block = true;
+                s(this.class).style.background = 'red';
+
+              }
+
+            }
+
+            if(name=='init_user_position'){
+
+              matrix[user.y][user.x].add_obj('clear');
+              clearMap();
+
+              user.x = this.x();
+              user.y = this.y();
+
+              this.obj = name;
+              this.block = true;
+              s(this.class).style.background = 'yellow';
+
+            }
+
+          }
+
+        };
+
+
+        var top = long*y;
+        var left = long*x;
+
+        var html = '<touch class="abs touch-'+x+'-'+y+'"></touch>';
+
+        append('map', html);
+
+        var node = matrix[y][x].class;
+
+        s(node).style.top = top+'%';
+        s(node).style.left = left+'%';
+        s(node).style.width = long+'%';
+        s(node).style.height = long+'%';
+        s(node).style.background = 'white';
+
+        s(node).onclick = function(event) {
+
+          var xs = parseInt(this.className.split('-')[1]);
+          var ys = parseInt(this.className.split('-')[2]);
+
+          if(log){console.log('onclick -> xs:'+xs+' ys:'+ys);}
+
+          if(last_key==49){
+
+            matrix[ys][xs].add_obj('clear');
+
+          }
+
+          if(last_key==50){
+
+            matrix[ys][xs].add_obj('init_user_position');
+
+          }
+
+          if(last_key==51){
+
+            matrix[ys][xs].add_obj('obstaculo');
+
+          }
+
+          if(last_key==52){
+
+            if(!matrix[ys][xs].block){
+
+              user.desx=xs;
+              user.desy=ys;
+              s(matrix[ys][xs].class).style.background = 'blue';
+              pathFinder();
+
+            }
+
+          }
+
+        };
+
+      };
+
+    }
+
+    //#202020
+    //#5c5c5c
+
+    var mouse = 'b2';
+
+    s('.b1').onmouseover = function(event){
+
+      s('.b1').style.background = '#202020';
+
+    };
+
+    s('.b1').onmouseout = function(event){
+
+      if(mouse!='b1'){
+
+        s('.b1').style.background = '#5c5c5c';
+
+      }
+
+    };
+
+    s('.b2').onmouseover = function(event){
+
+      s('.b2').style.background = '#202020';
+
+    };
+
+    s('.b2').onmouseout = function(event){
+
+      if(mouse!='b2'){
+
+        s('.b2').style.background = '#5c5c5c';
+
+      }
+
+    };
+
+    s('.b3').onmouseover = function(event){
+
+      s('.b3').style.background = '#202020';
+
+    };
+
+    s('.b3').onmouseout = function(event){
+
+      if(mouse!='b3'){
+
+        s('.b3').style.background = '#5c5c5c';
+
+      }
+
+    };
+
+    s('.b4').onmouseover = function(event){
+
+      s('.b4').style.background = '#202020';
+
+    };
+
+    s('.b4').onmouseout = function(event){
+
+      if(mouse!='b4'){
+
+        s('.b4').style.background = '#5c5c5c';
+
+      }
+
+    };
+
+    s('.b5').onmouseover = function(event){
+
+      s('.b5').style.background = '#202020';
+
+    };
+
+    s('.b5').onmouseout = function(event){
+
+      if(mouse!='b5'){
+
+        s('.b5').style.background = '#5c5c5c';
+
+      }
+
+    };
+
+    s('.b1').onclick = function(event){
+
+      mouse = 'b1';
+
+      s('.b1').style.background = '#202020';
+      s('.b2').style.background = '#5c5c5c';
+      s('.b3').style.background = '#5c5c5c';
+      s('.b4').style.background = '#5c5c5c';
+      s('.b5').style.background = '#5c5c5c';
+
+      last_key = 49;
+
+    }
+
+    s('.b2').onclick = function(event){
+
+      mouse = 'b2';
+
+      s('.b1').style.background = '#5c5c5c';
+      s('.b2').style.background = '#202020';
+      s('.b3').style.background = '#5c5c5c';
+      s('.b4').style.background = '#5c5c5c';
+      s('.b5').style.background = '#5c5c5c';
+
+      last_key = 50;
+
+    }
+
+    s('.b3').onclick = function(event){
+
+      mouse = 'b3';
+
+      s('.b1').style.background = '#5c5c5c';
+      s('.b2').style.background = '#5c5c5c';
+      s('.b3').style.background = '#202020';
+      s('.b4').style.background = '#5c5c5c';
+      s('.b5').style.background = '#5c5c5c';
+
+      last_key = 51;
+
+    }
+
+    s('.b4').onclick = function(event){
+
+      mouse = 'b4';
+
+      s('.b1').style.background = '#5c5c5c';
+      s('.b2').style.background = '#5c5c5c';
+      s('.b3').style.background = '#5c5c5c';
+      s('.b4').style.background = '#202020';
+      s('.b5').style.background = '#5c5c5c';
+
+      last_key = 52;
+
+    }
+
+    s('.b5').onclick = function(event){
+
+      mouse = 'b5';
+
+      s('.b1').style.background = '#5c5c5c';
+      s('.b2').style.background = '#5c5c5c';
+      s('.b3').style.background = '#5c5c5c';
+      s('.b4').style.background = '#5c5c5c';
+      s('.b5').style.background = '#202020';
+
+      last_key = 53;
+      clearMap();
+
+    }
+
+    // key event
+
+    var last_key = 50;
+
+    document.onkeydown = function() {
+
+      last_key = window.event.keyCode;
+
+      if(log){console.log('onkeydown -> last_key:'+last_key)};
+
+
+      if(last_key==49){
+
+        s('.b1').style.background = '#202020';
+        s('.b2').style.background = '#5c5c5c';
+        s('.b3').style.background = '#5c5c5c';
+        s('.b4').style.background = '#5c5c5c';
+        s('.b5').style.background = '#5c5c5c';
+
+        mouse = 'b1';
+
+      }
+
+      if(last_key==50){
+
+        s('.b1').style.background = '#5c5c5c';
+        s('.b2').style.background = '#202020';
+        s('.b3').style.background = '#5c5c5c';
+        s('.b4').style.background = '#5c5c5c';
+        s('.b5').style.background = '#5c5c5c';
+
+        mouse = 'b2';
+
+      }
+
+      if(last_key==51){
+
+        s('.b1').style.background = '#5c5c5c';
+        s('.b2').style.background = '#5c5c5c';
+        s('.b3').style.background = '#202020';
+        s('.b4').style.background = '#5c5c5c';
+        s('.b5').style.background = '#5c5c5c';
+
+        mouse = 'b3';
+
+      }
+
+      if(last_key==52){
+
+        s('.b1').style.background = '#5c5c5c';
+        s('.b2').style.background = '#5c5c5c';
+        s('.b3').style.background = '#5c5c5c';
+        s('.b4').style.background = '#202020';
+        s('.b5').style.background = '#5c5c5c';
+
+        mouse = 'b4';
+
+      }
+
+      if(last_key==53){
+
+        s('.b1').style.background = '#5c5c5c';
+        s('.b2').style.background = '#5c5c5c';
+        s('.b3').style.background = '#5c5c5c';
+        s('.b4').style.background = '#5c5c5c';
+        s('.b5').style.background = '#202020';
+
+        mouse = 'b5';
+
+        clearMap();
+
+      }
+
+    };
+
+    function clearMap(){
+
+      for(var y=0;y<dim;y++){
+
+        for(var x=0;x<dim;x++){
+
+          if(!matrix[y][x].block){
+
+            matrix[y][x].add_obj('clear');
+
+          }
+
+        }
+
+      }
+
+    }
+
+    function pathFinder(){
+
+      clearMap();
+
+      var cont=1;
+      var ax = user.x;
+      var ay = user.y;
+
+      function validate(){
+
+        var valid = true;
+
+        if(ax<0){
+
+          valid = false;
+
+        }
+
+        if(ax>(dim-1)){
+
+          valid = false;
+
+        }
+
+        if(ay<0){
+
+          valid = false;
+
+        }
+
+        if(ay>(dim-1)){
+
+          valid = false;
+
+        }
+
+        if(valid && matrix[ay][ax].block){
+
+          return false;
+
+        }
+
+        if(end){
+
+          return false;
+
+        }
+
+        return valid;
+
+      }
+
+      function mark(){
+
+        if(!(ay==user.desy && ax==user.desx)){
+
+          s(matrix[ay][ax].class).style.background = 'green';
+          htmls(matrix[ay][ax].class, (''+cont));
+
+        }else{
+
+          s(matrix[ay][ax].class).style.background = 'blue';
+          if(log){console.log('pathcost -> cont:'+cont)};
+
+        }
+
+        matrix[ay][ax].cost = cont;
+
+      }
+
+      var path = 1;
+
+      function generatePath(){
+
+        var end = false;
+
+        while(!end){
+
+          var a = null;
+          var b = null;
+          var c = null;
+          var d = null;
+
+
+
+          if((user.desy-1)>-1){
+
+            if(matrix[(user.desy-1)][(user.desx)].obj=='init_user_position'){
+
+              end = true;
+
+            }else if(!matrix[(user.desy-1)][(user.desx)].block){
+
+              a = matrix[(user.desy-1)][(user.desx)].cost;
+
+            }
+
+          }
+
+          if((user.desy+1)<(dim)){
+
+            if(matrix[(user.desy+1)][(user.desx)].obj=='init_user_position'){
+
+              end = true;
+
+            }else if(!matrix[(user.desy+1)][(user.desx)].block){
+
+              b = matrix[(user.desy+1)][(user.desx)].cost;
+
+            }
+
+          }
+
+          if((user.desx-1)>-1){
+
+            if(matrix[(user.desy)][(user.desx-1)].obj=='init_user_position'){
+
+              end = true;
+
+            }else if(!matrix[(user.desy)][(user.desx-1)].block){
+
+              c = matrix[(user.desy)][(user.desx-1)].cost;
+
+            }
+
+          }
+
+          if((user.desx+1)<(dim)){
+
+            if(matrix[(user.desy)][(user.desx+1)].obj=='init_user_position'){
+
+              end = true;
+
+            }else if(!matrix[(user.desy)][(user.desx+1)].block){
+
+              d = matrix[(user.desy)][(user.desx+1)].cost;
+
+            }
+
+          }
+
+          if(!end){
+
+            var arr = [a, b, c, d];
+            var minValue = Math.min.apply(null, arr.filter(Boolean));
+            matrix[(user.desy)][(user.desx)].cost=null;
+
+            if(minValue==a){
+
+              s(matrix[(user.desy-1)][(user.desx)].class).style.background = 'orange';
+              append(matrix[(user.desy-1)][(user.desx)].class, ('<span style="color: red;"> '+path+'</span>'));
+              user.desy = user.desy-1;
+
+            }
+
+            if(minValue==b){
+
+              s(matrix[(user.desy+1)][(user.desx)].class).style.background = 'orange';
+              append(matrix[(user.desy+1)][(user.desx)].class, ('<span style="color: red;"> '+path+'</span>'));
+              user.desy = user.desy+1;
+
+            }
+
+            if(minValue==c){
+
+              s(matrix[(user.desy)][(user.desx-1)].class).style.background = 'orange';
+              append(matrix[(user.desy)][(user.desx-1)].class, ('<span style="color: red;"> '+path+'</span>'));
+              user.desx = user.desx-1;
+
+            }
+
+            if(minValue==d){
+
+              s(matrix[(user.desy)][(user.desx+1)].class).style.background = 'orange';
+              append(matrix[(user.desy)][(user.desx+1)].class, ('<span style="color: red;"> '+path+'</span>'));
+              user.desx = user.desx+1;
+
+            }
+
+          }
+
+          path++;
+
+          if(path>=1000){
+
+            end = true;
+
+          }
+
+        }
+
+      }
+
+      var iter = 1;
+      var op = '-';
+      var end = false;
+
+      while(!end){
+
+        if(op=='-'){
+
+          for(var i =0; i<iter;i++){
+
+            ax = ax - 1;
+            if(validate()){
+
+              mark();
+
+            }
+            cont++;
+
+          }
+
+          for(var i =0; i<iter;i++){
+
+            ay = ay - 1;
+            if(validate()){
+
+              mark();
+
+            }
+            cont++;
+
+          }
+
+        }
+
+        if(op=='+'){
+
+          for(var i =0; i<iter;i++){
+
+            ax = ax + 1;
+            if(validate()){
+
+              mark();
+
+            }
+            cont++;
+
+          }
+
+          for(var i =0; i<iter;i++){
+
+            ay = ay + 1;
+            if(validate()){
+
+              mark();
+
+            }
+            cont++;
+
+          }
+
+        }
+
+        iter++;
+        if(op=='+'){
+
+          op='-';
+
+        }else if(op=='-'){
+
+          op='+';
+
+        }
+
+        if(cont>=(dim*dim*4)){
+
+          end = true;
+          generatePath();
+
+        }
+
+      }
+
+    }
+
+
+    var user = {
+      x: random(1, (dim-1)),
+      y: random(1, (dim-1)),
+      desx: -1,
+      desy: -1
+    }
+
+    matrix[user.x][user.y].add_obj('init_user_position');
+
+
+  }());
+
+</script>

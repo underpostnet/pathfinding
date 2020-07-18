@@ -1,0 +1,151 @@
+
+
+<meta name='viewport' content='initial-scale=1.0, maximum-scale=1.0, user-scalable=0'/>
+
+<meta name='viewport' content='width=device-width, user-scalable=no' />
+
+
+
+
+
+
+
+
+<script>
+
+  function fadeOut(el){
+    el.style.opacity = 1;
+
+    (function fade() {
+      if ((el.style.opacity -= .1) < 0) {
+        el.style.display = "none";
+      } else {
+        requestAnimationFrame(fade);
+      }
+    })();
+  };
+
+  function fadeIn(el, display){
+    el.style.opacity = 0;
+    el.style.display = display || "block";
+
+    (function fade() {
+      var val = parseFloat(el.style.opacity);
+      if (!((val += .1) > 1)) {
+        el.style.opacity = val;
+        requestAnimationFrame(fade);
+      }
+    })();
+  };
+
+  function random(min, max){
+
+    return Math.floor(Math.random() * (max - min + 1) ) + min;
+
+  }
+
+  function s(div){
+
+    return document.querySelector(div);
+
+  }
+
+  function append(div, html){
+
+    s(div).insertAdjacentHTML('beforeend', html);
+
+  }
+
+  function prepend(div, html){
+
+    s(div).insertAdjacentHTML('afterbegin', html);
+
+  }
+
+  function htmls(div, html){
+
+    s(div).innerHTML = html;
+
+  }
+
+  function sremove(div){
+
+    s(div).parentNode.removeChild(s(div));
+
+  }
+
+  document.oncontextmenu = function(){ return false; }
+
+  document.ondragstart = function(){ return false; }
+
+  document.onselectstart = function(){ return false; }
+
+</script>
+
+
+
+<style>
+
+  html, body {
+
+    position: absolute;
+    display: block;
+    background: black;
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    cursor: default;
+    font-family: arial;
+    color: white;
+    overflow: hidden;
+    font-size: 12px;
+
+  }
+
+  h1, h2 {
+
+    display: none;
+
+  }
+
+  .abs {
+
+    position: absolute;
+    display: block;
+
+  }
+
+  .in {
+
+    position: relative;
+    display: block;
+
+  }
+
+  .center {
+
+    transform: translate(-50%,-50%);
+    top: 50%;
+    left: 50%;
+    width: 100%;
+    text-align: center;
+
+  }
+
+
+
+  a {
+
+    color: white;
+    text-decoration: none;
+
+  }
+
+  a:hover  {
+
+    color: red;
+
+  }
+
+</style>
